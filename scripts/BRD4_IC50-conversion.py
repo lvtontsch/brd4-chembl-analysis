@@ -14,7 +14,7 @@ def transform(df):
     # filter
     df = df[(df['Smiles'].notnull())
             & (df['Standard Type'] == 'IC50')
-            & (df['Standard Relation'].isin(['=', '>']))
+            & (df['Standard Relation'] == '=')
             & (df['Standard Value'].notnull())
             & (df['Standard Units'] == 'nM')
             & (df['Data Validity Comment'] != 'Potential transcription error')
@@ -23,17 +23,28 @@ def transform(df):
             & (df['Target ChEMBL ID'] == 'CHEMBL1163125')
             & (df['Source Description'].isin(['BindingDB Patent Bioactivity Data', 'Scientific Literature']))
             ]
-    keep = ['Molecule ChEMBL ID','Molecular Weight','#RO5 Violations','AlogP','Smiles','Standard Relation','Standard Value','pChEMBL Value','Assay ChEMBL ID','Assay Description','Assay Variant Mutation','Document ChEMBL ID','Source Description','Document Journal','Document Year']
-    df = df[keep].copy()
-    df['pIC50'] = (9 - np.log10(df['Standard Value'])).where(df['Standard Relation'] == '=')
-    df['pIC50 upper bound'] = (9 - np.log10(df['Standard Value'])).where(df['Standard Relation'] == '>')
+    
+    # select columns
+    keep = ['Molecule ChEMBL ID','Molecular Weight','#RO5 Violations','AlogP','Smiles','Standard Relation','Standard Value','pChEMBL Value','Assay ChEMBL ID','Assay Description','BAO Label','Assay Cell Type','Assay Variant Mutation','Document ChEMBL ID','Source Description','Document Journal','Document Year']
+    df = df[keep]
+
+    # calculate pIC50 for exact Standard Values
+    df['pIC50'] = (9 - np.log10(df['Standard Value']))
+    
+    # add assay categories
+    df['Assay Technology'] = 'other/unclear'
+    df.loc[df['Assay Description'].str.contains('alphascreen|alphalisa|alpha screen|alpha-screen', case=False, na=False), 'Assay Technology'] = 'Alpha'
+    df.loc[df['Assay Description'].str.contains('FRET|HTRF|europium|Eu-labeled|terbium|allophycocyanin', case=False, na=False), 'Assay Technology'] = 'TR-FRET'
+    df.loc[df['Assay Description'].str.contains('polari', case=False, na=False), 'Assay Technology'] = 'FP'
+    df['Assay Format'] = df['BAO Label']
+    df.loc[df['Assay Cell Type'].isin(['Sf9', 'BL21-DE3', 'CHO']), 'Assay Format'] = 'single protein format'
 
     # split mutations
-    df_mutants = df[df['Assay Variant Mutation'].notna()]
-    df_clean = df[df['Assay Variant Mutation'].isna()]
+    df_mutants = df[df['Assay Variant Mutation'].notna()].copy()
+    df_clean = df[df['Assay Variant Mutation'].isna()].copy()
     
     # value per molecule
-    df_molecules_exact = df_clean[df_clean['Standard Relation'] == '='].groupby('Molecule ChEMBL ID').agg(**{
+    df_molecules = df_clean[(df_clean['Assay Format'].isin(['single protein format', 'assay format']))].groupby('Molecule ChEMBL ID').agg(**{
         'Smiles': ('Smiles', 'first'),
         'Molecular Weight': ('Molecular Weight', 'first'),
         'AlogP': ('AlogP', 'first'),
@@ -45,29 +56,9 @@ def transform(df):
         'First Year': ('Document Year', 'min'),
         'Sources': ('Source Description', lambda x: ', '.join(sorted(x.unique())))
     }).reset_index()
-    df_molecules_exact['Value Type'] = 'exact'
-    df_molecules_exact['Activity'] = 'active'
-    df_molecules_exact.loc[df_molecules_exact['pIC50'] < 6, 'Activity'] = 'inactive'
-    df_molecules_exact['IC50 (nM)'] = 10 ** (9 - df_molecules_exact['pIC50'])
-
-    df_molecules_lowerbound = df_clean[(df_clean['Standard Relation'] == '>') & (~df_clean['Molecule ChEMBL ID'].isin(df_molecules_exact['Molecule ChEMBL ID']))].groupby('Molecule ChEMBL ID').agg(**{
-        'Smiles': ('Smiles', 'first'),
-        'Molecular Weight': ('Molecular Weight', 'first'),
-        'AlogP': ('AlogP', 'first'),
-        '#RO5 Violations': ('#RO5 Violations', 'first'),
-        'IC50 lower bound (nM)': ('Standard Value', 'max'),
-        'Number of Measurements': ('Standard Value', 'count'),
-        'Number of Documents': ('Document ChEMBL ID', 'nunique'),
-        'First Year': ('Document Year', 'min'),
-        'Sources': ('Source Description', lambda x: ', '.join(sorted(x.unique())))
-    }).reset_index()
-    df_molecules_lowerbound['Value Type'] = 'lower bound'
-    df_molecules_lowerbound['Activity'] = 'unknown'
-    df_molecules_lowerbound.loc[df_molecules_lowerbound['IC50 lower bound (nM)'] >= 1000, 'Activity'] = 'inactive'
-    df_molecules_lowerbound = df_molecules_lowerbound[df_molecules_lowerbound['Activity'] == 'inactive'].copy()
-    df_molecules_lowerbound['pIC50 upper bound'] = 9 - np.log10(df_molecules_lowerbound['IC50 lower bound (nM)'])
-
-    df_molecules = pd.concat([df_molecules_exact, df_molecules_lowerbound], ignore_index=True)
+    df_molecules['Activity'] = 'active'
+    df_molecules.loc[df_molecules['pIC50'] < 6, 'Activity'] = 'inactive'
+    df_molecules['IC50 (nM)'] = 10 ** (9 - df_molecules['pIC50'])
     
     return df_clean, df_mutants, df_molecules
 
