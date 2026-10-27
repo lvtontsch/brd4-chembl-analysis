@@ -4,13 +4,14 @@
 What makes a molecule a promising BRD4 inhibitor?
 
 ## Data
-- Source: ChEMBL database (target: CHEMBL1163125, IC50 measurements)
+- Source: ChEMBL (EMBL-EBI); target: CHEMBL1163125, IC50 measurements
 - Download date: 19.10.2026
 
 ## Data transformations
 - Filtered to verify the sole inclusion of CHEMBL1163125 measurements of binding assays (type B) with IC50 values in nM
 - Selection of exact (=) measurements only; < and > values were excluded as they provide no exact potency value; < values originated almost entirely from patent potency categories (e.g. < 100 nM)
 - Exclusion of transcription errors and ChEMBL-flagged duplicates. 'Outside typical range' measurements were kept due to inconsistent application of the flag throughout the data
+- Exclusion of (−)-JQ1 (CHEMBL3220211), the inactive enantiomer used as a negative control, due to contradictory values (likely mis-assigned stereochemistry)
 - Selection of primary sources (scientific literature and patent data); secondary compilations (EUbOPEN, SGC, chemical probe sets) were excluded, as they partly re-report previously published values and contributed < 60 measurements
 - Extraction of relevant columns to minimise excessive data
 - Reclassification of assay format (derived from ChEMBL's BAO label, corrected for protein expression hosts Sf9, BL21 and CHO) and annotation of assay technology (Alpha, TR-FRET, FP) 
@@ -20,13 +21,18 @@ What makes a molecule a promising BRD4 inhibitor?
 - Classification into active and inactive inhibitors: threshold of pIC50 >= 6 (IC50 <= 1 µM), a common cutoff for active compounds
 
 ## Results
-Dashboard: tba
+[![BRD4 dashboard](https://public.tableau.com/static/images/br/brd4_analysis/Dashboard/1.png)](https://public.tableau.com/views/brd4_analysis/Dashboard)
+
+Interactive version: [Tableau Public](https://public.tableau.com/views/brd4_analysis/Dashboard)
+
+Molecules without Rule-of-5 data in ChEMBL (n = 25) are not shown in the Rule-of-5 charts.
 
 ## Limitations
-- Measurements on different BRD4 constructs (BD1, BD2, tandem) were combined, as the domain could not be reliably determined from assay descriptions
-- 325 molecules show a pIC50 spread > 1 (> 10-fold difference) between repeat measurements
-- Actives outnumber inactives (4,108 vs. 2,934), likely reflecting publication bias towards optimised compound series
-- Accumulation of pIC50 values at 4.3 (50 µM) suggests assay upper limits recorded as exact values; these were retained, as they are classified as inactive regardless
+- Measurements on different BRD4 constructs (BD1, BD2, tandem) were combined, as the domain could not be reliably determined from assay descriptions; for domain-selective compounds, the median pIC50 therefore represents neither domain (the largest spreads in the data result from BD2-selective inhibitors)
+- Differences in assay conditions between laboratories may be reflected in the spread of repeat measurements of the same molecule
+- Actives outnumber inactives (4,107 vs. 2,934), likely reflecting publication bias towards optimised compound series
+- Accumulation of pIC50 values at 4.3 (50 µM) suggests assay upper limits recorded as exact values; these were retained, as they are classified as inactive
+- Stereochemical annotation may be unreliable, so that measurements of one enantiomer may be assigned to the other
 
 ## How to run
 1. Clone the repository and create the virtual environment:
