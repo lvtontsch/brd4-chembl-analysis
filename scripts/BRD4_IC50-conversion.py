@@ -19,6 +19,7 @@ def transform(df):
             & (df['Standard Units'] == 'nM')
             & (df['Data Validity Comment'] != 'Potential transcription error')
             & (df['Potential Duplicate'] == 0)
+            & (df['Molecule ChEMBL ID'] != 'CHEMBL3220211')
             & (df['Assay Type'] == 'B')
             & (df['Target ChEMBL ID'] == 'CHEMBL1163125')
             & (df['Source Description'].isin(['BindingDB Patent Bioactivity Data', 'Scientific Literature']))
@@ -26,7 +27,7 @@ def transform(df):
     
     # select columns
     keep = ['Molecule ChEMBL ID','Molecular Weight','#RO5 Violations','AlogP','Smiles','Standard Relation','Standard Value','pChEMBL Value','Assay ChEMBL ID','Assay Description','BAO Label','Assay Cell Type','Assay Variant Mutation','Document ChEMBL ID','Source Description','Document Journal','Document Year']
-    df = df[keep]
+    df = df[keep].copy()
 
     # calculate pIC50 for exact Standard Values
     df['pIC50'] = (9 - np.log10(df['Standard Value']))

@@ -26,6 +26,7 @@ Dashboard: tba
 - Measurements on different BRD4 constructs (BD1, BD2, tandem) were combined, as the domain could not be reliably determined from assay descriptions
 - 325 molecules show a pIC50 spread > 1 (> 10-fold difference) between repeat measurements
 - Actives outnumber inactives (4,108 vs. 2,934), likely reflecting publication bias towards optimised compound series
+- Accumulation of pIC50 values at 4.3 (50 µM) suggests assay upper limits recorded as exact values; these were retained, as they are classified as inactive regardless
 
 ## How to run
 1. Clone the repository and create the virtual environment:
