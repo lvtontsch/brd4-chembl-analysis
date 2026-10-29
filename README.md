@@ -1,7 +1,7 @@
 # ChEMBL Analysis: BRD4 inhibitor potency
 
 ## Question
-What makes a molecule a promising BRD4 inhibitor?
+How drug-like are potent BRD4 inhibitors, and how have the number and drug-likeness of new inhibitors evolved since 2011?
 
 ## Data
 - Source: ChEMBL 37 (EMBL-EBI), SQLite database
