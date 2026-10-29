@@ -1,8 +1,7 @@
 # ChEMBL Analysis: BRD4 inhibitor potency
-
-## Question
 BRD4 is an epigenetic reader protein that drives oncogene expression (e.g. MYC), making it a target for cancer therapy.
 
+## Question
 How drug-like are potent BRD4 inhibitors and how have the number and drug-likeness of new inhibitors evolved since 2011?
 
 ## Data
