@@ -3,7 +3,7 @@
 ## Question
 BRD4 is an epigenetic reader protein that drives oncogene expression (e.g. MYC), making it a target for cancer therapy.
 
-How drug-like are potent BRD4 inhibitors and how has the number and drug-likeliness of new inhibitors evolved since 2011?
+How drug-like are potent BRD4 inhibitors and how have the number and drug-likeness of new inhibitors evolved since 2011?
 
 ## Data
 - Source: ChEMBL 37 (EMBL-EBI), SQLite database
