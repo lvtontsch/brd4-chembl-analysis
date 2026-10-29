@@ -1,35 +1,18 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import sqlite3 
 
 # extract
-def extract_from_csv(source):
-    dataframe = pd.read_csv(source, sep=';', low_memory=False)
-    return dataframe
+def extract(dp_path, query_path):
+    sql_connection = sqlite3.connect(dp_path)
+    df = pd.read_sql_query(Path(query_path).read_text(), sql_connection)
+    sql_connection.close()
+    return df
 
 # transform
 def transform(df):
-    df['Standard Relation']=df['Standard Relation'].str.strip("'")
-    
-    # filter
-    df = df[(df['Smiles'].notnull())
-            & (df['Standard Type'] == 'IC50')
-            & (df['Standard Relation'] == '=')
-            & (df['Standard Value'].notnull())
-            & (df['Standard Units'] == 'nM')
-            & (df['Data Validity Comment'] != 'Potential transcription error')
-            & (df['Potential Duplicate'] == 0)
-            & (df['Molecule ChEMBL ID'] != 'CHEMBL3220211')
-            & (df['Assay Type'] == 'B')
-            & (df['Target ChEMBL ID'] == 'CHEMBL1163125')
-            & (df['Source Description'].isin(['BindingDB Patent Bioactivity Data', 'Scientific Literature']))
-            ]
-    
-    # select columns
-    keep = ['Molecule ChEMBL ID','Molecular Weight','#RO5 Violations','AlogP','Smiles','Standard Relation','Standard Value','pChEMBL Value','Assay ChEMBL ID','Assay Description','BAO Label','Assay Cell Type','Assay Variant Mutation','Document ChEMBL ID','Source Description','Document Journal','Document Year']
-    df = df[keep].copy()
-
-    # calculate pIC50 for exact Standard Values
+    # calculate pIC50 for exact values
     df['pIC50'] = (9 - np.log10(df['Standard Value']))
     
     # add assay categories
@@ -46,14 +29,12 @@ def transform(df):
     
     # value per molecule
     df_molecules = df_clean[(df_clean['Assay Format'].isin(['single protein format', 'assay format']))].groupby('Molecule ChEMBL ID').agg(**{
-        'Smiles': ('Smiles', 'first'),
         'Molecular Weight': ('Molecular Weight', 'first'),
-        'AlogP': ('AlogP', 'first'),
         '#RO5 Violations': ('#RO5 Violations', 'first'),
         'pIC50': ('pIC50', 'median'),
         'pIC50 Spread': ('pIC50', lambda x: x.max() - x.min()), 
         'Number of Measurements': ('Standard Value', 'count'),
-        'Number of Documents': ('Document ChEMBL ID', 'nunique'),
+        'Number of Documents': ('Document ID', 'nunique'),
         'First Year': ('Document Year', 'min'),
         'Sources': ('Source Description', lambda x: ', '.join(sorted(x.unique())))
     }).reset_index()
@@ -69,7 +50,7 @@ def load(df_clean, df_mutants, df_molecules, folder):
     df_mutants.to_csv(folder / "brd4_mutants.csv", index=False)
     df_molecules.to_csv(folder / "brd4_molecules.csv", index=False)
 
-df = extract_from_csv(Path("data/raw/BRD4_IC50.csv"))
+df = extract(Path('data/raw/chembl_37.db'), Path('sql/extract_brd4.sql'))
 df_clean, df_mutants, df_molecules = transform(df)
 
 load(df_clean, df_mutants, df_molecules, Path("data/processed/"))
